@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require racket/file pl/client)
+(require racket/file racket/class racket/gui/base pl/client)
 
 ;; This is a command line interface for the PL handin server. To use this
 ;; program you MUST have the pl package installed in your distribution of
@@ -17,9 +17,7 @@
 
 
 ;;; PLAYGROUND
-
-;; Print the available assignments.
-available-assignments
+(define password "<no>")
 
 ;; Get the input file.
 
@@ -29,12 +27,19 @@ available-assignments
 
 (unless (= argc 1) (error "No file given"))
 
+(define text (new text%))
+(send text insert (file->string (vector-ref argv 0)))
+(send text save-file ".out" 'same #f)
+
+;; Print the available assignments.
+available-assignments
+
 ;; Submit a file to scratch assignment.
 (submit-assignment connection
                    "nixpulvis"
-                   "<no>"
+                   password
                    "hw02"
-                   (file->bytes (vector-ref argv 0))
+                   (file->bytes ".out")
                    (lambda () (printf "Committing..."))
                    (lambda (m) (printf "~a~n" m))
                    (lambda (m) (printf "~a~n" m))
@@ -44,10 +49,10 @@ available-assignments
 (set! connection (handin-connect "pl.barzilay.org" 9770))
 
 ;; Get the handin server's copy of the submission for scratch assignment.
-(define file (retrieve-assignment connection "nixpulvis" "iBookG4lolttyl!" "hw02"))
+(define file (retrieve-assignment connection "nixpulvis" password "hw02"))
 
 ;; Write the file.
-(define out (open-output-file "foo.txt"))
+(define out (open-output-file ".in"))
 (write-bytes file out)
 
 ;;;
