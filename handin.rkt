@@ -42,8 +42,8 @@ available-assignments
                    (file->bytes ".out")
                    (lambda () (printf "Committing..."))
                    (lambda (m) (printf "~a~n" m))
-                   (lambda (m) (printf "~a~n" m))
-                   (lambda (a b) 1))
+                   (lambda (m) (printf "!! ~a~n" m) #t)
+                   (lambda (msg styles) 'yes))
 
 ;; Reform the connection.
 (set! connection (handin-connect "pl.barzilay.org" 9770))
