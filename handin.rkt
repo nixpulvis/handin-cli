@@ -3,56 +3,63 @@
 (require racket/file racket/class pl/client)
 (require racket/gui/base)  ; TODO: Remove need for this.
 
-;; Submission Structure.
-(define-struct submission (username password filename))
-
 ;; This is a command line interface for the PL handin server. To use this
 ;; program you MUST have the pl package installed in your distribution of
 ;; Racket.
 
-;; Connect to the handin server, and bind the connection to `connection`.
-;; connection : #<handin>
-(define connection (handin-connect "pl.barzilay.org" 9770))
+;; General
+;; -------
 
 
-;; Command Line Parsing
-;; --------------------
+;; A [Listof A] -> Boolean
+(define (member? element list)
+  (ormap (lambda (e) (equal? e element)) list))
 
-; A command is one of:
-;; - list
-;; - submit
-;; commands : [Listof String]
-(define commands '("list" "submit"))
 
-;; Retrive the command for the program.
-;; command : String
-(define command (vector-ref (current-command-line-arguments) 0))
+;; -> Symbol
+(define (get-symbol)
+  (string->symbol (read-line (current-input-port))))
 
-;; Validate `command`.
-(unless (ormap (lambda (c) (string=? command c)) commands)
-  (error "bad command" command))
+
+; String [Listof A] -> A  TODO: More info on A.
+; A is one of:
+; - 'yes-no
+; - ...
+(define (prompt msg styles)
+  (printf "~a~n" msg)
+  (cond [(member? 'yes-no styles)
+         (printf "(yes/no)~n")
+         (get-symbol)]
+        [else 'no]))
+
+
+;; Submission Structure.
+(define-struct submission (username password assignment filename))
 
 
 ;; Commands
 ;; --------
 
-(define (list)
+;; List the avalible assignments.
+(define (list connection)
   ;; Retrieve the active assignments available for hand in, and bind them
   ;; to `available-assignments`.
   ;; available-assignments : [List-of String]
   (define available-assignments (retrieve-active-assignments connection))
 
   ;; Display the available assignments.
-  (displayln available-assignments))
+  (printf "~a~n" available-assignments))
 
-(define (submit)
+
+;; Submit some homework.
+(define (submit connection)
   ;; Retrieve the submission structure from the command line.
   ;; user-submission : #<submission>
   (define user-submission (command-line
                             #:program "handin submit"
                             #:argv (vector-drop (current-command-line-arguments) 1)
-                            #:args (username password filename)
-                            (make-submission username password filename)))
+                            #:args (username password assignment filename)
+                            (make-submission username password assignment filename)))
 
   ;; Make a text GUI element.
   (define text (new text%))
@@ -63,19 +70,46 @@
   (submit-assignment connection
                      (submission-username user-submission)
                      (submission-password user-submission)
-                     "hw03"
+                     (submission-assignment user-submission)
                      (file->bytes ".out")
-                     (lambda () (printf "Committing..."))
+                     (lambda ()  (printf "committing~n"))
                      (lambda (m) (printf "~a~n" m))
-                     (lambda (m) (printf "!! ~a~n" m) #t)
-                     (lambda (msg styles) 'yes)))
+                     (lambda (m) (printf "! ~a~n" m) #t)
+                     prompt))
+
+
+;; Command Line Parsing
+;; --------------------
+
+
+; A command is one of:
+;; - list
+;; - submit
+;; commands : [Listof String]
+(define commands '("list" "submit"))
+
+
+;; Retrive the command for the program.
+;; command : String
+(define command (vector-ref (current-command-line-arguments) 0))
+
+
+;; Validate `command`.
+(unless (member? command commands)
+  (error "bad command" command))
 
 
 ;; Command Running
 ;; ---------------
 
-(cond [(string=? command "list") (list)]
-      [(string=? command "submit") (submit)])
+
+;; Connect to the handin server, and bind the connection to `connection`.
+;; connection : #<handin>
+(define connection (handin-connect "pl.barzilay.org" 9770))
+
+
+(cond [(string=? command "list") (list connection)]
+      [(string=? command "submit") (submit connection)])
 
 
 ; ;;; PLAYGROUND
