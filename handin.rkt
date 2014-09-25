@@ -100,6 +100,37 @@
   )
 
 
+(define (retrieve connection)
+  ;; Retrieve the submission structure from the command line.
+  ;; user-submission : #<submission>
+  (define user-submission (command-line
+                            #:program "handin retrieve"
+                            #:argv (vector-drop (current-command-line-arguments) 1)
+                            #:args (assignment filename)
+                            (make-submission assignment filename)))
+
+  ;; Create the writing file.
+  (define out (open-output-file (submission-filename user-submission)))
+
+  ;; Ask for username and password.
+  ;; user-auth: #<auth>
+  (define user-auth (get-auth))
+
+  ;; Get the handin server's copy of the submission for scratch assignment.
+  (define file (retrieve-assignment connection
+                                    (auth-username user-auth)
+                                    (auth-password user-auth)
+                                    (submission-assignment user-submission)))
+
+  ;; TODO: Convert to plain text.
+
+  ;; Write the file.
+  (write-bytes file out)
+
+  ;; TODO: Return something sane.
+  )
+
+
 ;; Command Line Parsing
 ;; --------------------
 
@@ -107,8 +138,9 @@
 ; A command is one of:
 ;; - list
 ;; - submit
+;; - retrieve
 ;; commands : [Listof String]
-(define commands '("list" "submit"))
+(define commands '("list" "submit" "retrieve"))
 
 
 ;; Retrive the command for the program.
@@ -131,19 +163,5 @@
 
 
 (cond [(string=? command "list") (list connection)]
-      [(string=? command "submit") (submit connection)])
-
-
-; ;;; PLAYGROUND
-
-; ;; Reform the connection.
-; (set! connection (handin-connect "pl.barzilay.org" 9770))
-
-; ;; Get the handin server's copy of the submission for scratch assignment.
-; (define file (retrieve-assignment connection "nixpulvis" password "hw02"))
-
-; ;; Write the file.
-; (define out (open-output-file ".in"))
-; (write-bytes file out)
-
-; ;;;
+      [(string=? command "submit") (submit connection)]
+      [(string=? command "retrieve") (retrieve connection)])
