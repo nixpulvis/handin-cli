@@ -11,14 +11,31 @@
 ;; -------
 
 
+;; Submission structure.
+(define-struct submission (assignment filename))
+
+
+;; Auth structure.
+(define-struct auth (username password))
+
+
 ;; A [Listof A] -> Boolean
 (define (member? element list)
   (ormap (lambda (e) (equal? e element)) list))
 
 
-;; -> Symbol
-(define (get-symbol)
-  (string->symbol (read-line (current-input-port))))
+;; -> String
+(define (get-string)
+  (read-line (current-input-port)))
+
+
+;; -> Auth
+(define (get-auth)
+  (printf "username: ")
+  (define username (get-string))
+  (printf "password: ")
+  (define password (get-string))  ; TODO: Hide the typing.
+  (make-auth username password))
 
 
 ; String [Listof A] -> A  TODO: More info on A.
@@ -29,12 +46,8 @@
   (printf "~a~n" msg)
   (cond [(member? 'yes-no styles)
          (printf "(yes/no)~n")
-         (get-symbol)]
+         (string->symbol (get-string))]
         [else 'no]))
-
-
-;; Submission Structure.
-(define-struct submission (username password assignment filename))
 
 
 ;; Commands
@@ -58,8 +71,11 @@
   (define user-submission (command-line
                             #:program "handin submit"
                             #:argv (vector-drop (current-command-line-arguments) 1)
-                            #:args (username password assignment filename)
-                            (make-submission username password assignment filename)))
+                            #:args (assignment filename)
+                            (make-submission assignment filename)))
+
+  ;; Ask for username and password.
+  (define user-auth (get-auth))
 
   ;; Make a text GUI element.
   (define text (new text%))
@@ -68,8 +84,8 @@
 
   ;; Submit a file to scratch assignment.
   (submit-assignment connection
-                     (submission-username user-submission)
-                     (submission-password user-submission)
+                     (auth-username user-auth)
+                     (auth-password user-auth)
                      (submission-assignment user-submission)
                      (file->bytes ".out")
                      (lambda ()  (printf "committing~n"))
