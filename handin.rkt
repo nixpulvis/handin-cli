@@ -75,9 +75,12 @@
                             (make-submission assignment filename)))
 
   ;; Ask for username and password.
+  ;; user-auth: #<auth>
   (define user-auth (get-auth))
 
   ;; Make a text GUI element.
+  ;; HACK: This is kinda gross, we should be able to convert to the
+  ;; proper file format without a GUI.
   (define text (new text%))
   (send text insert (file->string (submission-filename user-submission)))
   (send text save-file ".out" 'same #f)
@@ -91,7 +94,10 @@
                      (lambda ()  (printf "committing~n"))
                      (lambda (m) (printf "~a~n" m))
                      (lambda (m) (printf "! ~a~n" m) #t)
-                     prompt))
+                     prompt)
+
+  ;; TODO: Clean up .out file.
+  )
 
 
 ;; Command Line Parsing
