@@ -1,0 +1,22 @@
+Usage
+-----
+There are three commands `list`, `submit`, and `retrieve`.
+
+    racket handin.rkt <command> ...
+
+list: Lists available assignments open for submission.
+
+    racket handin.rkt list
+
+submit: Submits a file to the handin server for an assignment.
+
+    racket handin.rkt submit <assignment> <filename>
+
+retrieve: Retrieves a file from the server for an assignment.
+
+    racket handin.rkt retrieve <assignment> <filename>
+
+Dependencies
+------------
+Racket (only tested on 6.1)
+PL plugin installed.
