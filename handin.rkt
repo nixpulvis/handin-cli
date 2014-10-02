@@ -74,6 +74,8 @@
                             #:args (assignment filename)
                             (make-submission assignment filename)))
 
+  (define tmpfile ".out")
+
   ;; Ask for username and password.
   ;; user-auth: #<auth>
   (define user-auth (get-auth))
@@ -83,7 +85,7 @@
   ;; proper file format without a GUI.
   (define text (new text%))
   (send text insert (file->string (submission-filename user-submission)))
-  (send text save-file ".out" 'same #f)
+  (send text save-file tmpfile 'same #f)
 
   ;; Submit a file to scratch assignment.
   (submit-assignment connection
@@ -96,8 +98,7 @@
                      (lambda (m) (printf "! ~a~n" m) #t)
                      prompt)
 
-  ;; TODO: Clean up .out file.
-  )
+  (delete-file tmpfile))
 
 
 (define (retrieve connection)
@@ -109,8 +110,10 @@
                             #:args (assignment filename)
                             (make-submission assignment filename)))
 
-  ;; Create the writing file.
-  (define out (open-output-file (submission-filename user-submission)))
+  (define tmpfile ".in")
+
+  ;; Create the temporary writing file.
+  (define in (open-output-file tmpfile))
 
   ;; Ask for username and password.
   ;; user-auth: #<auth>
@@ -122,13 +125,20 @@
                                     (auth-password user-auth)
                                     (submission-assignment user-submission)))
 
-  ;; TODO: Convert to plain text.
+  ;; Write the file from the server.
+  (write-bytes file in)
 
-  ;; Write the file.
-  (write-bytes file out)
+  ;; Make a text GUI element.
+  ;; HACK: This is kinda gross, we should be able to convert to the
+  ;; proper file format without a GUI.
+  (define text (new text%))
+  (send text load-file tmpfile)
 
-  ;; TODO: Return something sane.
-  )
+  ;; Create the writing file.
+  (define out (open-output-file (submission-filename user-submission)))
+  (write-bytes (string->bytes/utf-8 (send text get-text)) out)
+
+  (delete-file tmpfile))
 
 
 ;; Command Line Parsing
